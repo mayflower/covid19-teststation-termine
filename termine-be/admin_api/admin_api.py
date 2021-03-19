@@ -15,7 +15,8 @@ def get_users():
     JOIN booking b ON b.booked_by = u.user_name
     GROUP BY u.user_name, u.coupons
     """
-    users = User.select().where(User.role != UserRoles.ANON).order_by(User.role.desc(), User.user_name)
+    users = User.select().where(User.role != UserRoles.ANON).order_by(
+        User.role.desc(), User.user_name)
     return [{
         "user_name": user.user_name,
         "is_admin": user.role == UserRoles.ADMIN,
@@ -26,13 +27,14 @@ def get_users():
 
 
 @hug.patch("/user", requires=admin_authentication)
-def patch_user(db: PeeweeSession, user_name: hug.types.text, coupons: hug.types.number):
+def patch_user(db: PeeweeSession, user_name: hug.types.text, coupons: hug.types.number, is_admin: hug.types.smart_boolean):
     with db.atomic():
         try:
             user = User.get(User.user_name == user_name)
             if coupons < 0:
                 coupons = 0
             user.coupons = coupons
+            user.role = UserRoles.ADMIN if is_admin else UserRoles.USER
             user.save()
             return {
                 "user_name": user.user_name,
@@ -57,7 +59,8 @@ def put_user(db: PeeweeSession, newUserName: hug.types.text, newUserPassword: hu
             salt = get_random_string(2)
             secret_password = newUserPassword
             hashed_password = hash_pw(name, salt, secret_password)
-            user = User.create(user_name=name, role=UserRoles.USER, salt=salt, password=hashed_password, coupons=10)
+            user = User.create(user_name=name, role=UserRoles.USER,
+                               salt=salt, password=hashed_password, coupons=10)
             user.save()
             return {
                 "username": user.user_name

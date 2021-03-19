@@ -168,15 +168,15 @@ export const UserTable = ({ triggerRefresh, setTriggerRefresh }) => {
                     <td style={style}>
                       <input
                         id="is_admin"
-                        disabled={true}
+                        disabled={false}
                         type="checkbox"
                         checked={user.is_admin}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           patchUser({
                             ...user,
-                            is_admin: e.target.value || false,
-                          })
-                        }
+                            is_admin: !user.is_admin,
+                          });
+                        }}
                       />
                     </td>
                     <td style={style}>{user.total_bookings}</td>
