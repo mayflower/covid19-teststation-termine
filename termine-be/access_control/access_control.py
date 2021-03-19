@@ -29,13 +29,14 @@ token_key_authentication = hug.authentication.token(token_verify)
 
 
 class UserRoles:
+    SUPER_ADMIN = 'super_admin'
     ADMIN = 'admin'
     USER = 'doctor'
     ANON = 'anonymous'
 
     @staticmethod
     def user_roles():
-        return [UserRoles.ADMIN, UserRoles.USER, UserRoles.ANON]
+        return [UserRoles.SUPER_ADMIN, UserRoles.ADMIN, UserRoles.USER, UserRoles.ANON]
 
 
 def normalize_user(user_name):
@@ -83,11 +84,12 @@ def search_ldap_user(user_name: str, user_password: str, context: PeeweeContext)
     sys_user = config.Ldap.user_dn
     sys_pw = config.Ldap.user_pw
     base = config.Ldap.search_base
-    filter = config.Ldap.search_filter
+    search_filter = config.Ldap.search_filter
     attribute = config.Ldap.search_attribute
-    if "" in [url, sys_user, sys_pw, base, filter, attribute]:
+    if "" in [url, sys_user, sys_pw, base, search_filter, attribute]:
         log.error(
-            "ENV variables for LDAP not set. You'll need to define LDAP_URL, LDAP_SYSTEM_DN, LDAP_SYSTEM_USER_PW, LDAP_SEARCH_BASE, LDAP_SEARCH_FILTER, LDAP_ATTRIBUTE")
+            "ENV variables for LDAP not set. You'll need to define LDAP_URL, LDAP_SYSTEM_DN, LDAP_SYSTEM_USER_PW, "
+            "LDAP_SEARCH_BASE, LDAP_SEARCH_FILTER, LDAP_ATTRIBUTE")
         return False
 
     with_tls = config.Ldap.use_tls
@@ -103,14 +105,14 @@ def search_ldap_user(user_name: str, user_password: str, context: PeeweeContext)
         connection.start_tls()
     if result:
         # searches for the user about to log in in the ldap server
-        connection.search(base, filter.format(
+        connection.search(base, search_filter.format(
             user_name), attributes=[attribute])
         # if exactly one was found, tries to log this one in
         if len(connection.entries) == 1:
-            userConnection = Connection(
+            user_connection = Connection(
                 server, user=connection.entries[0].entry_dn, password=user_password, authentication=SIMPLE)
-            isValid = userConnection.bind()
-            if isValid:
+            is_valid = user_connection.bind()
+            if is_valid:
                 # creates a user if not existing yet, in order to track coupon numbers per ldap user
                 return get_or_create_auto_user(context.db, UserRoles.USER, f'ldap-{user_name}')
     log.warning(f"Didn't find an ldap user for uid {user_name}")
@@ -196,4 +198,13 @@ def admin_authentication(user_name, user_password, context: PeeweeContext):
     if user and user.role == UserRoles.ADMIN:
         return user
     log.warning("missing admin role for: %s", user_name)
+    return False
+
+
+@ hug.authentication.basic
+def super_admin_authentication(user_name, user_password, context: PeeweeContext):
+    user = verify_user(user_name, user_password, context)
+    if user and user.role == UserRoles.SUPERADMIN:
+        return user
+    log.warning("missing superadmin role for: %s", user_name)
     return False

@@ -15,6 +15,7 @@ from db import directives
 from db.migration import migrate_db, init_database
 from db.model import TimeSlot, Appointment, User, Booking, Migration, FrontendConfig
 from secret_token.secret_token import get_random_string, hash_pw
+from admin_api import admin_api
 
 log = logging.getLogger('cli')
 
@@ -26,89 +27,6 @@ def cli_output(data):
     writer.writeheader()
     writer.writerows(data)
     return result.getvalue().encode('utf8')
-
-
-@hug.cli()
-def create_appointments(
-        db: directives.PeeweeSession,
-        day: hug.types.number,
-        month: hug.types.number,
-        year: hug.types.number = date.today().year,
-        start_hour: hug.types.number = 8,
-        start_min: hug.types.number = 30,
-        num_slots: hug.types.number = 13,
-        num_appointment_per_slot: hug.types.number = 8,
-        slot_duration_min: hug.types.number = 30
-):
-    """
-    [--day] <number> [--month] <number> [--year <number=date.today().year>] [--start_hour <number=8>] [--start_min <number=30>] [--num_slots <number=13>] [--num_appointment_per_slot <number=8>] [--slot_duration_min <number=30>]
-    creates timeslots and their corresponsing appointments
-    """
-    with db.atomic():
-        for i in range(num_slots):
-            ts = TimeSlot.create(
-                start_date_time=datetime(year, month, day, start_hour, start_min, tzinfo=None) + timedelta(
-                    minutes=i * slot_duration_min),
-                length_min=slot_duration_min)
-            for _ in range(num_appointment_per_slot):
-                Appointment.create(booked=False, time_slot=ts)
-            ts.save()
-
-
-@hug.cli()
-def delete_timeslots(
-        db: directives.PeeweeSession,
-        year: hug.types.number,
-        month: hug.types.number,
-        day: hug.types.number,
-        start_hour: hug.types.number,
-        start_min: hug.types.number,
-        num_slots: hug.types.number,
-        for_real: hug.types.boolean = False
-):
-    """
-    [--year] <number> [--month] <number> [--day] <number> [--start_hour] <number> [--start_min] <number> [--num_slots] <number> [--for_real]
-    deletes timeslots and their corresponsing appointments if they are not booked
-    """
-    with db.atomic():
-        dto = datetime(year, month, day, start_hour, start_min, tzinfo=None)
-        tomorrow = datetime(year, month, day, tzinfo=None) + timedelta(days=1)
-        ts = TimeSlot.select().where(
-            (TimeSlot.start_date_time >= dto) & (TimeSlot.start_date_time < tomorrow)).order_by(
-            TimeSlot.start_date_time).limit(num_slots)
-        if not for_real:
-            log.info(
-                f"I would delete the following time slots - run with --for_real if these are correct")
-        else:
-            log.info(f"Deleting the following time slots")
-        tsids_to_delete = []
-        for t in ts:
-            tsids_to_delete.append(t.id)
-            log.info(f"ID: {t.id} - {t.start_date_time}")
-        if not tsids_to_delete:
-            log.error("No matching timeslots found! Exiting.")
-            sys.exit(1)
-        apts = Appointment.select().where(Appointment.time_slot.in_(tsids_to_delete))
-        log.info(
-            f"this {'will' if for_real else 'would'} affect the following appointments")
-        apts_to_delete = []
-        for apt in apts:
-            apts_to_delete.append(apt)
-            log.info(
-                f"ID: {apt.id} - {apt.time_slot.start_date_time}: {'booked!' if apt.booked else 'free'}")
-        if all(not apt.booked for apt in apts_to_delete):
-            log.info(
-                f"none of these appointments are booked, so I {'will' if for_real else 'would'} delete them")
-            if for_real:
-                aq = Appointment.delete().where(
-                    Appointment.id.in_([a.id for a in apts_to_delete]))
-                tq = TimeSlot.delete().where(TimeSlot.id.in_(tsids_to_delete))
-                aq.execute()
-                tq.execute()
-                log.info("Done!")
-        else:
-            log.error(
-                f"Some of these appointments are already booked, {'will' if for_real else 'would'} not delete!")
 
 
 def _add_one_user(db: directives.PeeweeSession, username: hug.types.text, password: hug.types.text = None,
@@ -239,17 +157,6 @@ def set_coupon_count(db: directives.PeeweeSession, user_name: hug.types.text, va
 
 
 @hug.cli()
-def inc_coupon_count(db: directives.PeeweeSession, user_name: hug.types.text, increment: hug.types.number):
-    """
-    [--user_name] <string> [--increment] <number>; increment the user coupon_count, to decrement give a negative number
-    """
-    with db.atomic():
-        user = User.get(User.user_name == user_name)
-        user.coupons += increment
-        user.save()
-
-
-@hug.cli()
 def cancel_booking(db: directives.PeeweeSession, secret: hug.types.text, start_date_time: hug.types.text, for_real: hug.types.smart_boolean = False):
     """
     [--secret] <string> [--start_date_time] <ISO datetime string> [--for_real]; cancel the booking with given secret at given time
@@ -272,46 +179,6 @@ def cancel_booking(db: directives.PeeweeSession, secret: hug.types.text, start_d
             booking.appointment.save()
             q = Booking.delete().where(Booking.id == booking.id)
             q.execute()
-            print("Done.")
-
-
-@hug.cli()
-def set_frontend_config(db: directives.PeeweeSession, instance_name: hug.types.text, long_instance_name: hug.types.text,
-                        contact_info_bookings: hug.types.text, contact_info_appointments: hug.types.text = None,
-                        form_fields: hug.types.text = "base,address,dayOfBirth,reason",
-                        for_real: hug.types.smart_boolean = False):
-    """
-    [--instance_name] <string> [--long_instance_name] <string> [--contact_info_bookings] <string> [--contact_info_appointments <string=None>] [--form_fields <string="base,address,dayOfBirth,reason">] [--for_real]
-    """
-    with db.atomic():
-
-        if not contact_info_appointments:
-            appointments_contact = contact_info_bookings
-        else:
-            appointments_contact = contact_info_appointments
-
-        template = {
-            "instanceName": f"{instance_name}",
-            "longInstanceName": f"{long_instance_name}",
-            "contactInfoCoupons": f"{contact_info_bookings}",
-            "contactInfoAppointment": f"{appointments_contact}",
-            "formFields": form_fields.split(","),
-        }
-
-        if not for_real:
-            print(f"This would update the config with '{json.dumps(template, indent=2)}'. Run with --for_real if you "
-                  f"are sure.")
-            sys.exit(1)
-        else:
-            print(
-                f"Updating the config with '{json.dumps(template, indent=2)}'.")
-            try:
-                config = FrontendConfig.get()
-                config.config = template
-            except FrontendConfig.DoesNotExist:
-                config = FrontendConfig.create(config=template)
-
-            config.save()
             print("Done.")
 
 
@@ -409,18 +276,6 @@ def get_free_timeslots_between(db: directives.PeeweeSession, start: datetime, en
 
 
 @hug.cli(output=hug.output_format.pretty_json)
-def free_slots_at(db: directives.PeeweeSession, at_datetime: hug.types.text = None, max_days_after: hug.types.number = 2):
-    """
-    [--at_datetime <ISO datetime string=None>] [--max_days_after <number=2>] returns a list of free slots after given date, up to date + max_days_after
-    """
-    start = datetime.now(tz=config.Settings.tz).replace(tzinfo=None)
-    if at_datetime is not None:
-        start = datetime.fromisoformat(at_datetime).replace(tzinfo=None)
-    end = start + timedelta(days=max_days_after)
-    return get_free_timeslots_between(db, start, end)
-
-
-@hug.cli(output=hug.output_format.pretty_json)
 def free_slots_before(db: directives.PeeweeSession, at_datetime: hug.types.text = None, max_days_before: hug.types.number = 2):
     """
     [--at_datetime <ISO datetime string=None>] [--max_days_before <number=2>] returns a list of free slots before given date, up to date - max_days_before
@@ -461,20 +316,21 @@ def has_booking(db: directives.PeeweeSession, booking: hug.types.json):
     """
     BOOKING_JSON; check if a booking exists for the booked person
     """
-    try:
-        return Booking.select(Booking).where(
-            (Booking.surname == booking["surname"])
-            & (Booking.first_name == booking["first_name"])
-            & (Booking.birthday == booking["birthday"])
-            & (Booking.phone == booking["phone"])
-            & (Booking.street == booking["street"])
-            & (Booking.street_number == booking["street_number"])
-            & (Booking.post_code == booking["post_code"])
-            & (Booking.city == booking["city"])
-        ).count() > 0
-    except KeyError as e:
-        print(f"Key {e} is missing in booking.")
-        return None
+    with db.atomic():
+        try:
+            return Booking.select(Booking).where(
+                (Booking.surname == booking["surname"])
+                & (Booking.first_name == booking["first_name"])
+                & (Booking.birthday == booking["birthday"])
+                & (Booking.phone == booking["phone"])
+                & (Booking.street == booking["street"])
+                & (Booking.street_number == booking["street_number"])
+                & (Booking.post_code == booking["post_code"])
+                & (Booking.city == booking["city"])
+            ).count() > 0
+        except KeyError as e:
+            print(f"Key {e} is missing in booking.")
+            return None
 
 
 @hug.cli(output=hug.output_format.pretty_json)
@@ -491,7 +347,7 @@ def book_followup(db: directives.PeeweeSession, booking: hug.types.json, delta_d
         booking["start_date_time"]).replace(tzinfo=None)
     followup_date = start_date + timedelta(days=delta_days)
 
-    slots_after = free_slots_at(
+    slots_after = admin_api.free_slots_at(
         db, booking["booked_by"], str(followup_date), day_range)
     slots_before = free_slots_before(
         db, booking["booked_by"], str(followup_date), day_range)

@@ -1,10 +1,13 @@
 import hug
 from peewee import DoesNotExist, IntegrityError
+from datetime import datetime, timedelta
 
 from access_control.access_control import admin_authentication, UserRoles
 from db.directives import PeeweeSession
 from db.model import User, Booking
+from config import config
 from secret_token.secret_token import get_random_string, hash_pw
+from cli import get_free_timeslots_between
 
 
 @hug.get("/user", requires=admin_authentication)
@@ -68,3 +71,28 @@ def put_user(db: PeeweeSession, newUserName: hug.types.text, newUserPassword: hu
             }
         except IntegrityError:
             raise hug.HTTPConflict('User already exists.')
+
+
+@hug.cli()
+@hug.patch("/coupon", requires=admin_authentication)
+def inc_coupon_count(db: PeeweeSession, user_name: hug.types.text, increment: hug.types.number):
+    """
+    [--user_name] <string> [--increment] <number>; increment the user coupon_count, to decrement give a negative number
+    """
+    with db.atomic():
+        user = User.get(User.user_name == user_name)
+        user.coupons += increment
+        user.save()
+
+
+@hug.cli(output=hug.output_format.pretty_json)
+@hug.get("/free_slots_at", requires=admin_authentication)
+def free_slots_at(db: PeeweeSession, at_datetime: hug.types.text = None, max_days_after: hug.types.number = 2):
+    """
+    [--at_datetime <ISO datetime string=None>] [--max_days_after <number=2>] returns a list of free slots after given date, up to date + max_days_after
+    """
+    start = datetime.now(tz=config.Settings.tz).replace(tzinfo=None)
+    if at_datetime is not None:
+        start = datetime.fromisoformat(at_datetime).replace(tzinfo=None)
+    end = start + timedelta(days=max_days_after)
+    return get_free_timeslots_between(db, start, end)

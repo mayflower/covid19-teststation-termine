@@ -44,8 +44,8 @@ def with_api():
 
 @hug.extend_api("/admin_api", requires=admin_authentication)
 def with_admin_api():
-    from admin_api import admin_api
-    return [admin_api]
+    from admin_api import admin_api, super_admin_api
+    return [admin_api, super_admin_api]
 
 
 @hug.static("/")
