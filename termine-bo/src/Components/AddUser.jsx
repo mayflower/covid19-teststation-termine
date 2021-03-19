@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { addUser } from "../Api";
 
-export default function AddUser({ onSuccess }) {
+export function AddUser({ onSuccess }) {
   const { register, handleSubmit, reset, errors, setError } = useForm();
 
   const onSave = (data) => {
