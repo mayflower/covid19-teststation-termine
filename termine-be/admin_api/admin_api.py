@@ -27,18 +27,19 @@ def get_users():
 
 
 @hug.patch("/user", requires=admin_authentication)
-def patch_user(db: PeeweeSession, user_name: hug.types.text, coupons: hug.types.number, is_admin: hug.types.smart_boolean):
+def patch_user(db: PeeweeSession, user: hug.directives.user, user_name: hug.types.text, coupons: hug.types.number, is_admin: hug.types.smart_boolean):
     with db.atomic():
         try:
-            user = User.get(User.user_name == user_name)
+            edited_user = User.get(User.user_name == user_name)
             if coupons < 0:
                 coupons = 0
-            user.coupons = coupons
-            user.role = UserRoles.ADMIN if is_admin else UserRoles.USER
-            user.save()
+            edited_user.coupons = coupons
+            if user != edited_user:
+                edited_user.role = UserRoles.ADMIN if is_admin else UserRoles.USER
+            edited_user.save()
             return {
-                "user_name": user.user_name,
-                "coupons": user.coupons
+                "user_name": edited_user.user_name,
+                "coupons": edited_user.coupons
             }
         except DoesNotExist as e:
             raise hug.HTTPBadRequest
