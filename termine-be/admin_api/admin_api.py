@@ -1,10 +1,10 @@
 import hug
 from peewee import DoesNotExist, IntegrityError
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from access_control.access_control import admin_authentication, UserRoles
 from db.directives import PeeweeSession
-from db.model import User, Booking
+from db.model import User, Booking, TimeSlot, Appointment
 from config import config
 from secret_token.secret_token import get_random_string, hash_pw
 from cli import get_free_timeslots_between
@@ -96,3 +96,31 @@ def free_slots_at(db: PeeweeSession, at_datetime: hug.types.text = None, max_day
         start = datetime.fromisoformat(at_datetime).replace(tzinfo=None)
     end = start + timedelta(days=max_days_after)
     return get_free_timeslots_between(db, start, end)
+
+
+@hug.cli()
+@hug.put("/appointments", requires=admin_authentication)
+def create_appointments(
+        db: PeeweeSession,
+        day: hug.types.number,
+        month: hug.types.number,
+        year: hug.types.number = date.today().year,
+        start_hour: hug.types.number = 8,
+        start_min: hug.types.number = 30,
+        num_slots: hug.types.number = 13,
+        num_appointment_per_slot: hug.types.number = 8,
+        slot_duration_min: hug.types.number = 30
+):
+    """
+    [--day] <number> [--month] <number> [--year <number=date.today().year>] [--start_hour <number=8>] [--start_min <number=30>] [--num_slots <number=13>] [--num_appointment_per_slot <number=8>] [--slot_duration_min <number=30>]
+    creates timeslots and their corresponsing appointments
+    """
+    with db.atomic():
+        for i in range(num_slots):
+            ts = TimeSlot.create(
+                start_date_time=datetime(year, month, day, start_hour, start_min, tzinfo=None) + timedelta(
+                    minutes=i * slot_duration_min),
+                length_min=slot_duration_min)
+            for _ in range(num_appointment_per_slot):
+                Appointment.create(booked=False, time_slot=ts)
+            ts.save()
