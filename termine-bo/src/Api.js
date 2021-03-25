@@ -12,3 +12,7 @@ export const patchUser = (data) => {
 export const addUser = (data) => {
   return axios.put(config.API_BASE_URL + "/user", { ...data });
 };
+
+export const addAppointment = (data) => {
+  return axios.put(config.API_BASE_URL + "/appointments", { ...data });
+};
