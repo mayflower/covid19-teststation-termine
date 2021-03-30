@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: prometheus-postgresql
+  namespace: {{ namespace.monitoring }}
+  labels:
+    app: prometheus-operator
+    release: prometheus-operator
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: postgresql
+  namespaceSelector:
+    matchNames:
+      - {{ namespace.monitoring }}
+  podMetricsEndpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

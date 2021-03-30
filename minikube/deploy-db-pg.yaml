@@ -1,0 +1,15 @@
+---
+- name: deploy Postgres SQL database
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars_files:
+    - "env/config.yaml"
+    - "env/namespace.yaml"
+    - "env/version.yaml"
+  roles:
+    - { role: postgres, tags: postgres }
+  pre_tasks:
+    - name: create k8s namespace
+      shell: |
+        kubectl --kubeconfig {{ kubeconfig }} create namespace {{ namespace.postgres }} || true
