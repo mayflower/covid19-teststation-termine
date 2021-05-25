@@ -1,0 +1,16 @@
+---
+- name: deploy 389DS LDAP server
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars_files:
+    - "env/setup.yaml"
+    - "env/app.yaml"
+  vars:
+    kubeconfig: "{{ kube_dir }}/{{ kube_config }}"
+  roles:
+    - { role: ldap, tags: ldap }
+  pre_tasks:
+    - name: create k8s namespace
+      shell: |
+        kubectl --kubeconfig {{ kubeconfig }} create namespace {{ namespace.ldap }} || true

@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ldap389ds
+  namespace: {{ namespace.ldap }}
+
+spec:
+  selector:
+    app: ldap389ds
+    tier: backend
+  ports:
+    - name: ldap
+      port: {{ ldap.port }}
+      protocol: TCP
+      targetPort: ldap
+    - name: ldaps
+      port: {{ ldap.tlsPort }}
+      protocol: TCP
+      targetPort: ldaps
+  sessionAffinity: None
+  type: ClusterIP
