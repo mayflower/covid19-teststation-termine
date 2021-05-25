@@ -1,0 +1,7 @@
+{
+  "instanceName": "production",
+  "longInstanceName": "Impftermin-Vergabe",
+  "contactInfoCoupons": "buch-mich@test.en",
+  "contactInfoAppointment": "buch-mich@test.en",
+  "formFields": ["base", "address", "dayOfBirth", "reason"]
+}
