@@ -1,0 +1,6 @@
+---
+- name: install Helm chart
+  shell: |-
+    helm --kubeconfig {{ kubeconfig }} repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm --kubeconfig {{ kubeconfig }} repo update
+    helm --kubeconfig {{ kubeconfig }} install -n {{ namespace.prometheusOperator }} prometheus-operator prometheus-community/kube-prometheus-stack --version {{ helm_chart_version.prometheusOperator }} -f {{ k8s_install_dir.path }}/values.yaml

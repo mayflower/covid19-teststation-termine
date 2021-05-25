@@ -1,0 +1,32 @@
+grafana:
+  enabled: true
+  adminUser: "{{ prometheusOperator.grafana.user }}"
+  adminPassword: "{{ prometheusOperator.grafana.password }}"
+
+  # Add some Grafana plugins often used by dashboards
+  plugins:
+    - grafana-piechart-panel
+
+  # Enable provisioning of Grafana resources
+  sidecar:
+    # Loaded at create/update
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL
+    # Loaded at Grafana pod restart only
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      searchNamespace: ALL
+    notifiers:
+      enabled: true
+      label: grafana_notifier
+      searchNamespace: ALL
+
+  # Allow persistent config changes in Grafana
+  persistence:
+    type: pvc
+    enabled: {{ prometheusOperator.grafana.persistentConfig }}
+    accessModes: [ ReadWriteOnce ]
+    size: 1Gi

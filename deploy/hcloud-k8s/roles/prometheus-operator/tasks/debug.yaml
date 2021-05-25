@@ -1,0 +1,9 @@
+---
+- name: check deployment
+  shell: |
+    kubectl --kubeconfig {{ kubeconfig }} -n {{ namespace.prometheusOperator }} get all
+  register: shell_result
+
+- name: shell output
+  debug:
+    var: shell_result.stdout_lines

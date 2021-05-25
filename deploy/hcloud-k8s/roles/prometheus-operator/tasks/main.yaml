@@ -1,0 +1,33 @@
+---
+- name: create working directory
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: build
+  register: k8s_install_dir
+
+- name: check deployment status
+  shell: "helm --kubeconfig {{ kubeconfig }} status -n {{ namespace.prometheusOperator }} prometheus-operator 2>/dev/null | grep 'STATUS: deployed' | awk '{print $2}'"
+  ignore_errors: true
+  register: helm_chart_status
+  when: prometheusOperator.deploy
+
+- name: create Helm chart values
+  template:
+    src: values.yaml.j2
+    dest: "{{ k8s_install_dir.path }}/values.yaml"
+  when: prometheusOperator.deploy
+
+- include: install.yaml
+  when: prometheusOperator.deploy and not helm_chart_status.stdout == "deployed"
+
+- include: upgrade.yaml
+  when: prometheusOperator.deploy and helm_chart_status.stdout == "deployed"
+
+- include: debug.yaml
+  when: prometheusOperator.deploy
+
+- name: chore
+  file:
+    path: "{{ k8s_install_dir.path }}"
+    state: absent
+  when: k8s_install_dir.path is defined
