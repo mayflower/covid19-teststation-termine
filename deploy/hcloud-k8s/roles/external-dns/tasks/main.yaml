@@ -1,0 +1,29 @@
+---
+- name: create working directory
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: build
+    prefix: ansible.{{ cluster_name }}
+  register: k8s_install_dir
+
+- name: create Helm chart values
+  template:
+    src: values.yaml.j2
+    dest: "{{ k8s_install_dir.path }}/values.yaml"
+
+- name: check deployment status
+  shell: "helm --kubeconfig {{ kubeconfig }} status -n {{ namespace.externalDNS }} external-dns 2>/dev/null | grep 'STATUS: deployed' | awk '{print $2}'"
+  ignore_errors: true
+  register: helm_chart_status
+
+- include: install.yaml
+  when: not helm_chart_status.stdout == "deployed"
+
+- include: upgrade.yaml
+  when: helm_chart_status.stdout == "deployed"
+
+- name: chore
+  file:
+    path: "{{ k8s_install_dir.path }}"
+    state: absent
+  when: k8s_install_dir.path is defined

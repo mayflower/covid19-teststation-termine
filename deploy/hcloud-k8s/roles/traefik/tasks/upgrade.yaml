@@ -1,0 +1,11 @@
+---
+- name: upgrade Helm chart
+  shell: |-
+    helm --kubeconfig {{ kubeconfig }} repo update
+    helm --kubeconfig {{ kubeconfig }} upgrade --namespace {{ namespace.traefik }} traefik traefik/traefik -f {{ k8s_install_dir.path }}/values.yaml --version {{ helm_chart_version.traefik }}
+
+- name: apply YAML manifests
+  shell: |-
+    kubectl --kubeconfig {{ kubeconfig }} apply -f {{ k8s_install_dir.path }}/middleware.yaml
+    kubectl --kubeconfig {{ kubeconfig }} apply -f {{ k8s_install_dir.path }}/ingress.yaml
+    kubectl --kubeconfig {{ kubeconfig }} apply -f {{ k8s_install_dir.path }}/service-internal.yaml

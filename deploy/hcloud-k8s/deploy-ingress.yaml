@@ -1,0 +1,39 @@
+---
+- name: deploy Traefik as ingress controller
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars_files:
+    - "env/credentials.yaml"
+    - "env/setup.yaml"
+    - "env/app.yaml"
+    - "env/hcloud.yaml"
+    - "env/ips.yaml"
+  vars:
+    - kubeconfig: "{{ kube_dir }}/{{ kube_config }}"
+    - domain_filters: [ "{{ subdomain }}.{{ domain }}" ]
+    - hostnames:
+      - "{{ hostname.traefik_dashboard }}.{{ subdomain }}.{{ domain }}"
+      - "{{ hostname.application }}.{{ subdomain }}.{{ domain }}"
+  roles:
+    - { role: external-dns, tags: external-dns }
+    - { role: traefik, tags: traefik }
+  pre_tasks:
+    - name: install Ansible module dependencies
+      pip:
+        name: openshift
+        state: present
+    - name: "create k8s namespace - {{ namespace.externalDNS }}"
+      community.kubernetes.k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        name: "{{ namespace.externalDNS }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+    - name: "create k8s namespace - {{ namespace.traefik }}"
+      community.kubernetes.k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        name: "{{ namespace.traefik }}"
+        api_version: v1
+        kind: Namespace
+        state: present
