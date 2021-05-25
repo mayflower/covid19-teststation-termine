@@ -1,4 +1,0 @@
----
-- name: remove minikube cluster on localhost
-  shell: |
-    minikube delete

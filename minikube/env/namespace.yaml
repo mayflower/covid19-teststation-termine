@@ -1,6 +1,0 @@
-namespace:
-  postgres: postgres
-  ldap: ldap
-  monitoring: monitoring
-  traefik: traefik
-  externaldns: traefik

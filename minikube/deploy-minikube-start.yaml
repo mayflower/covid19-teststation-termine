@@ -1,9 +1,0 @@
----
-- name: start minikube
-  hosts: localhost
-  gather_facts: false
-  become: false
-  vars_files:
-    - "env/config.yaml"
-  roles:
-    - { role: minikube-start, tags: minikube-start }

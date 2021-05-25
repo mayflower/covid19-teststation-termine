@@ -1,6 +1,0 @@
-version:
-  postgres: 10.3.13
-  ldap: 1.4.4
-  traefik: 9.18.0
-  externaldns: 4.9.3
-  prometheusOperator: 13.7.2
