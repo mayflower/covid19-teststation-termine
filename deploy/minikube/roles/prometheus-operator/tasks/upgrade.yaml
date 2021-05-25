@@ -1,0 +1,5 @@
+---
+- name: upgrade Helm chart
+  shell: |-
+    helm --kubeconfig {{ kubeconfig }} repo update
+    helm --kubeconfig {{ kubeconfig }} upgrade -n {{ namespace.monitoring }} prometheus-operator prometheus-community/kube-prometheus-stack --version {{ version.prometheusOperator }} -f {{ k8s_install_dir.path }}/values.yaml

@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scripts
+
+data:
+  setup.sh: |
+    #!/usr/bin/env bash
+    hug -f main.py -c init_db --for_real || hug -f main.py -c run_migrations --for_real
+    if [ "${FRONTEND_CONF_JSON}" != "" ]; then hug -f main.py -c load_frontend_config "${FRONTEND_CONF_JSON}" --for_real; fi
+
+  entrypoint.sh: |
+    #!/usr/bin/env bash
+    gunicorn --bind=0.0.0.0:8000 main:__hug_wsgi__
+
+  load_dump.sh: |
+    #!/usr/bin/env bash
+    cat /sqldumps/admin.psql | psql -h postgresql.postgres -U postgres -d termine -p 5432
+
+  admin.psql: |
+    INSERT INTO public."user" (id, user_name, salt, password, role, coupons) VALUES (1, 'admin', 'lf', '327f4ea90ec44ba8cd707fdee807c91cf1d5f55ed62923b5591b7aaeee36b5c4c8adeae083f23decfa7f0986482a2d256a08fe73e9db9243b2888898c80f5b39', 'admin', 10);
+    SELECT pg_catalog.setval('public.user_id_seq', 1, true);
+
+  preset.sh: |
+    #!/usr/bin/env bash
+    export DAY=$(date -d "+14 days" +%d)
+    export MONTH=$(date -d "+14 days" +%m)
+    export YEAR=$(date -d "+14 days" +%Y)
+    hug -f main.py -c create_appointments -y $YEAR $DAY $MONTH
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: termine-env-vars
+
+data:
+  CLAIM_TIMEOUT_MIN: "5"
+  DISPLAY_SLOTS_COUNT: "150"
+  TERMINE_TIME_ZONE: "Europe/Berlin"
+  DISABLE_AUTH: "False"
+  DB_USERNAME: "postgres"
+  DB_PASSWORD: "{{ postgres.password }}"
+  DB_HOST: "postgresql.{{ namespace.postgres }}"
+  FRONTEND_CONF_JSON: "config/by_env/production.json"
+  JWT_SECRET_KEY: "blablablabla"
+  USE_LDAP: "False"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: termine-ldap-vars
+
+data:
+  LDAP_URL: "ldap389ds.{{ namespace.ldap }}"
+  LDAP_SYSTEM_DN: "uid=termine,ou=Application,dc=example,dc=com"
+  LDAP_SYSTEM_USER_PW: "secret"
+  LDAP_SEARCH_BASE: "ou=People,dc=example,dc=com"
+  LDAP_SEARCH_FILTER: "(&(objectclass=Person)(uid={}))"
+  LDAP_ATTRIBUTE: "dn"
+  LDAP_USE_TLS: "True"
+  LDAP_PORT: "3389"
+  LDAP_TLS_PORT: "3636"

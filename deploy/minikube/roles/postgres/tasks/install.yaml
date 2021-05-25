@@ -1,0 +1,6 @@
+---
+- name: install Helm chart
+  shell: |-
+    helm --kubeconfig {{ kubeconfig }} repo add bitnami https://charts.bitnami.com/bitnami
+    helm --kubeconfig {{ kubeconfig }} repo update
+    helm --kubeconfig {{ kubeconfig }} install -n {{ namespace.postgres }} postgresql bitnami/postgresql -f {{ k8s_install_dir.path }}/values.yaml --version {{ version.postgres }} --wait

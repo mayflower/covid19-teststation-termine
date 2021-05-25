@@ -1,0 +1,9 @@
+---
+- name: deploy ingress to minikube
+  hosts: localhost
+  gather_facts: false
+  become: yes
+  vars_files:
+    - "env/ip.yaml"
+  roles:
+    - { role: hosts, tags: hosts }
