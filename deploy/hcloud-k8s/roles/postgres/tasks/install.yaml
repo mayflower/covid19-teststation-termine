@@ -6,16 +6,16 @@
     helm --kubeconfig {{ kubeconfig }} install -n {{ namespace.postgres }} postgresql bitnami/postgresql -f {{ k8s_install_dir.path }}/values.yaml --version {{ helm_chart_version.postgres }} --wait
 
 - name: wait for pods become created
-  shell: "kubectl get pod --namespace={{ namespace.postgres }} --selector k8s-app=postgresql --output=jsonpath='{.items[*].metadata.name}'"
+  shell: "kubectl get pod -n {{ namespace.postgres }} --selector 'app.kubernetes.io/instance=postgresql' --output=jsonpath='{.items[*].metadata.name}'"
   register: pods_created
   until: item in pods_created.stdout
   retries: 20
   delay: 15
   with_items:
-    - postgres
+    - postgresql-postgresql-0
 
 - name: wait for pods become ready
-  shell: "kubectl wait -n {{ namespace.postgres }} --for=condition=Ready pods --selector k8s-app=postgresql --timeout=600s"
+  shell: "kubectl wait -n {{ namespace.postgres }} --for=condition=Ready pods --selector 'app.kubernetes.io/instance=postgresql' --timeout=600s"
   register: pods_ready
 
 - debug:
