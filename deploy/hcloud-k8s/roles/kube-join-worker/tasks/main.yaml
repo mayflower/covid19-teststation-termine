@@ -1,0 +1,8 @@
+---
+- name: check if node has already joined
+  stat:
+    path: /opt/worker-joined.txt
+  register: join
+
+- include: join.yaml
+  when: not join.stat.exists

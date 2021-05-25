@@ -1,0 +1,26 @@
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+
+kubernetesVersion: v{{ kubernetes_version }}
+networking:
+  dnsDomain: {{ dns_domain }}
+  podSubnet: {{ pod_subnet }}
+  serviceSubnet: {{ service_subnet }}
+
+clusterName: {{ cluster_name }}
+controlPlaneEndpoint: {{ master_ips_private[0] }}:6443
+
+# Additional flags for APIServer, ControllerManager and Scheduler can be provided in this init config:
+# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/control-plane-flags/
+
+apiServer:
+  extraArgs:
+    advertise-address: {{ master_ips_private[0] }}
+  certSANs:
+{% for ip in master_ips %}
+    - {{ ip }}
+{% endfor %}
+{% for ip in master_ips_private %}
+    - {{ ip }}
+{% endfor %}

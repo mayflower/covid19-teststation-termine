@@ -1,0 +1,29 @@
+---
+- name: create join command for worker nodes
+  shell: kubeadm token create --print-join-command
+  register: join
+
+- name: save join command for worker nodes
+  local_action: copy content="{{ join.stdout }}" dest="/tmp/{{ cluster_name }}.worker-join.sh"
+  vars:
+    ansible_become: no
+
+- name: re-upload the certificates and generate a new decryption key
+  shell: kubeadm init phase upload-certs --upload-certs
+  become: yes
+  register: certs
+
+- name: create join command for master nodes
+  shell: kubeadm token create --print-join-command --certificate-key {{ certs.stdout_lines[-1] }}
+  register: join
+
+- name: save join command for master nodes
+  local_action: copy content="{{ join.stdout }}" dest="/tmp/{{ cluster_name }}.master-join.sh"
+  vars:
+    ansible_become: no
+
+- name: modify join command for master nodes
+  local_action:
+    module: shell
+    _raw_params: echo ' --ignore-preflight-errors=NumCPU' >> /tmp/{{ cluster_name }}.master-join.sh
+  become: no

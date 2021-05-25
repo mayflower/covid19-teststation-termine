@@ -1,0 +1,50 @@
+---
+- name: Create kubeconfig user data directory
+  file:
+    path: "{{ kube_dir }}"
+    state: directory
+
+- name: Copy kubeconfig from cluster to localhost
+  slurp:
+    src: /etc/kubernetes/admin.conf
+  register: kubeconf
+
+- name: Save kubeconf to new config on localhost
+  local_action: copy content="{{ kubeconf['content'] | b64decode }}" dest="{{ kubeconfig }}"
+  vars:
+    ansible_become: no
+
+- name: Rename cluster context for kubectl on localhost
+  delegate_to: localhost
+  vars:
+    ansible_become: no
+  replace:
+    path: "{{ kubeconfig }}"
+    regexp: 'kubernetes-admin@kubernetes'
+    replace: 'kubernetes-admin@{{ cluster_name }}'
+    mode: '0600'
+
+- name: Change private to public IP for API endpoint on localhost
+  delegate_to: localhost
+  vars:
+    ansible_become: no
+  replace:
+    path: "{{ kubeconfig }}"
+    regexp: '{{ master_ips_private[0] }}'
+    replace: '{{ master_ips[0] }}'
+    mode: '0600'
+
+- name: Rename cluster name for kubectl on localhost
+  delegate_to: localhost
+  vars:
+    ansible_become: no
+  replace:
+    path: "{{ kubeconfig }}"
+    regexp: '(name|cluster): kubernetes$'
+    replace: '\1: {{ cluster_name }}'
+    mode: '0600'
+
+- name: Print ENV export command
+  ansible.builtin.debug:
+    msg:
+      - "export KUBECONFIG={{ kubeconfig }}"

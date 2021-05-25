@@ -1,0 +1,8 @@
+---
+- name: check if server is already prepared
+  stat:
+    path: /opt/prepared.txt
+  register: prepared
+
+- include: tasks.yaml
+  when: not prepared.stat.exists

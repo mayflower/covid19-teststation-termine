@@ -1,0 +1,42 @@
+---
+- name: install Kubernetes control plane on first master node
+  hosts: master[0]
+  gather_facts: yes
+  remote_user: k8s
+  become: yes
+  vars_files:
+    - "env/credentials.yaml"
+    - "env/setup.yaml"
+    - "env/hcloud.yaml"
+    - "env/app.yaml"
+    - "env/ips.yaml"
+  vars:
+    kubeconfig: "{{ kube_dir }}/{{ kube_config }}"
+  roles:
+    - { role: kube-prepare, tags: kube-prepare }
+    - { role: kube-master, tags: kube-master }
+    - { role: kube-config, tags: kube-config }
+
+- name: join Kubernetes control plane with other master nodes
+  hosts: master[1:]
+  gather_facts: yes
+  remote_user: k8s
+  become: yes
+  vars_files:
+    - "env/setup.yaml"
+    - "env/hcloud.yaml"
+  roles:
+    - { role: kube-prepare, tags: kube-prepare }
+    - { role: kube-join-master, tags: kube-join-master }
+
+- name: join Kubernetes cluster with worker nodes
+  hosts: worker
+  gather_facts: yes
+  remote_user: k8s
+  become: yes
+  vars_files:
+    - "env/setup.yaml"
+    - "env/hcloud.yaml"
+  roles:
+    - { role: kube-prepare, tags: kube-prepare }
+    - { role: kube-join-worker, tags: kube-join-worker }
