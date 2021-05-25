@@ -1,0 +1,41 @@
+---
+- name: chore TF user-data dir
+  file:
+    path: "{{ role_path }}/terraform/user-data"
+    state: absent
+
+- name: chore ENV file with Ansible inventory
+  file:
+    path: "{{ playbook_dir }}/env/inventory"
+    state: absent
+
+- name: chore ENV file with IP addresses
+  file:
+    path: "{{ playbook_dir }}/env/ips.yaml"
+    state: absent
+
+- name: chore join shell script
+  file:
+    path: "/tmp/{{ cluster_name }}.join.sh"
+    state: absent
+
+- name: chore ENV files with HCloud infos
+  file:
+    path: "{{ playbook_dir }}/env/hcloud"
+    state: absent
+
+- name: delete cluster master join tempfile
+  file:
+    path: "/tmp/{{ cluster_name }}.master-join.sh"
+    state: absent
+
+- name: delete cluster worker join tempfile
+  file:
+    path: "/tmp/{{ cluster_name }}.worker-join.sh"
+    state: absent
+
+- name: delete HCloud managed SSL cert
+  hetzner.hcloud.hcloud_certificate:
+    api_token: "{{ hetzner_api_token }}"
+    name: "{{ managed_cert_name }}"
+    state: absent

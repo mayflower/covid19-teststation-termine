@@ -1,0 +1,18 @@
+---
+- name: create user-data directory
+  file:
+    path: "{{ playbook_dir }}/roles/tf-infrastructure/terraform/user-data"
+    state: directory
+  when: state == "present"
+
+- name: create cloud-init configuration for master nodes
+  template:
+    src: cloud-config.yaml.j2
+    dest: "{{ playbook_dir }}/roles/tf-infrastructure/terraform/user-data/cloud-config.master.yaml"
+  when: state == "present"
+
+- name: create cloud-init configuration for worker nodes
+  template:
+    src: cloud-config.yaml.j2
+    dest: "{{ playbook_dir }}/roles/tf-infrastructure/terraform/user-data/cloud-config.worker.yaml"
+  when: state == "present"

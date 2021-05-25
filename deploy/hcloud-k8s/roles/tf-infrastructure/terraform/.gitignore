@@ -1,0 +1,7 @@
+user-data/cloud-config.*.yaml
+.terraform
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfstate.lock.info
+outputs.json

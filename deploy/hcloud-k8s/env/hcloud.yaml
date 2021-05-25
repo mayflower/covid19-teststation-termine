@@ -1,0 +1,50 @@
+#
+# PRESETS FOR HETZNER CLOUD: DO NOT CHANGE UNLESS YOU KNOW WHY :)
+#
+
+# Hetzner Cloud servers
+master_count: 1
+worker_count: 2
+
+# Hetzner datacenter location name:
+# nbg1= Nuremberg DC Park 1
+ds_location: nbg1
+
+# Kubernetes version:
+# this setup works for v1.19.x
+kubernetes_version: 1.19.11
+
+# Kubernetes config
+pod_subnet: 10.96.0.0/16
+service_subnet: 10.244.0.0/16
+dns_domain: cluster.local
+
+# Docker-CE package version:
+# this setup works for v19.x
+docker_version: 5:19.03.15~3-0~ubuntu-focal
+
+# Hetzner Linux image:
+# this setup expects Ubuntu v20 as Linux host system
+os_image: ubuntu-20.04
+
+# Hetzner Cloud server types for cluster master node(s)
+master_server_type: cx11
+
+# Hetzner Cloud server types for cluster worker node(s)
+worker_server_type: cx21
+
+# Loadbalancer
+subnet_master_lb_ip: 10.0.1.1
+subnet_worker_lb_ip: 10.0.2.1
+
+# Private network settings
+network_name: kubernetes
+network_ip_range: 10.0.0.0/8
+
+# Master nodes
+subnet_master_ip_range: 10.0.1.0/24
+subnet_master_ip: 10.0.1
+
+# Worker nodes
+subnet_worker_ip_range: 10.0.2.0/24
+subnet_worker_ip: 10.0.2

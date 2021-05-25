@@ -1,0 +1,6 @@
+---
+- name: destroy HCloud Load Balancer (provisioned by Kubernetes CCM)
+  hetzner.hcloud.hcloud_load_balancer:
+    api_token: "{{ hetzner_api_token }}"
+    name: "traefik-lb"
+    state: absent

@@ -1,0 +1,19 @@
+#
+# CONFIGURATION: CHANGE DOMAIN SETTINGS AND OTHER STUFF HERE
+#
+# Kubernetes control plane API host: control_plane.subdomain.domain
+# Traefik Ingress Controller dashboard: traefik_dashboard.subdomain.domain
+# COVID Test-Station URL: application.subdomain.domain
+
+# Internal name of Kubernetes cluster
+cluster_name: roanapur
+
+# Naming (DNS) for master and worker nodes
+domain: roanapur.space
+subdomain: k8s
+
+# Naming (DNS) for hosts
+hostname:
+  control_plane: api
+  traefik_dashboard: ingress
+  application: covid-test-station

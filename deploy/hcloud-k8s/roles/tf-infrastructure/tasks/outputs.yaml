@@ -1,0 +1,10 @@
+---
+- name: create TF infrastructure ENV file
+  template:
+    src: inventory.yaml.j2
+    dest: "{{ playbook_dir }}/env/inventory"
+
+- name: save IP addresses to ENV file
+  template:
+    src: ips.yaml.j2
+    dest: "{{ playbook_dir }}/env/ips.yaml"
