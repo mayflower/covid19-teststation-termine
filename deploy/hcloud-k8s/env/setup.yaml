@@ -6,14 +6,14 @@
 # COVID Test-Station URL: application.subdomain.domain
 
 # Internal name of Kubernetes cluster
-cluster_name: roanapur
+cluster_name: my-covid-test
 
 # Naming (DNS) for master and worker nodes
-domain: roanapur.space
-subdomain: k8s
+domain: covid-test-station.org
+subdomain: cluster
 
 # Naming (DNS) for hosts
 hostname:
   control_plane: api
   traefik_dashboard: ingress
-  application: covid-test-station
+  application: application
