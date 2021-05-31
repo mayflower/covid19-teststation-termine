@@ -1,0 +1,38 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard-ingress-tls
+  namespace: {{ namespace.traefik }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{ hostname.traefik_dashboard }}.{{ subdomain }}.{{ domain }}`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
+      kind: Rule
+      services:
+        - name: traefik-internal
+          namespace: {{ namespace.traefik }}
+          port: 9000
+      middlewares:
+        - name: dashboard-basic-auth
+          namespace: traefik
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: termine-server-ingress-tls
+  namespace: default
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{ hostname.application }}.{{ subdomain }}.{{ domain }}`)
+      kind: Rule
+      services:
+        - name: termine-service
+          namespace: default
+          port: 8000

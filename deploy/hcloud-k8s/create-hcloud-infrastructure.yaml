@@ -1,0 +1,12 @@
+---
+- name: create hosts and network infrastructure on Hetzner Cloud
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars_files:
+    - "env/credentials.yaml"
+    - "env/setup.yaml"
+    - "env/hcloud.yaml"
+    - "env/app.yaml"
+  roles:
+    - { role: tf-infrastructure, tags: tf-infrastructure }

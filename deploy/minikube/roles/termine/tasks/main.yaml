@@ -1,0 +1,14 @@
+---
+- name: create working directory
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: build
+  register: k8s_install_dir
+
+- include: deploy.yaml
+
+- name: chore
+  file:
+    path: "{{ k8s_install_dir.path }}"
+    state: absent
+  when: k8s_install_dir.path is defined

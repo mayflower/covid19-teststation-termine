@@ -1,0 +1,42 @@
+---
+# https://github.com/hetznercloud/hcloud-cloud-controller-manager/blob/master/docs/deploy_with_networks.md
+- name: copy Cilium Container Network Interface (CNI) manifest
+  template:
+    src: cilium-cni.yaml.j2
+    dest: "{{ k8s_install_dir.path }}/cilium.yaml"
+
+# https://docs.cilium.io/en/v1.9/gettingstarted/k8s-install-default/
+- name: deploy Cilium CNI
+  shell: kubectl apply -f {{ k8s_install_dir.path }}/cilium.yaml
+
+- name: wait for Cilium pods become created
+  shell: "kubectl get pod --namespace=kube-system --selector k8s-app=cilium --output=jsonpath='{.items[*].metadata.name}'"
+  register: cilium_pods_created
+  until: item in cilium_pods_created.stdout
+  retries: 20
+  delay: 15
+  with_items:
+    - cilium
+
+- name: wait for Cilium pods become ready
+  shell: "kubectl wait -n kube-system --for=condition=Ready pods --selector k8s-app=cilium --timeout=600s"
+  register: cilium_pods_ready
+
+- debug:
+    var: cilium_pods_ready.stdout_lines
+
+- name: wait for DNS pods become created
+  shell: "kubectl get pod --namespace=kube-system --selector k8s-app=kube-dns --output=jsonpath='{.items[*].metadata.name}'"
+  register: dns_pods_created
+  until: item in dns_pods_created.stdout
+  retries: 20
+  delay: 15
+  with_items:
+    - coredns
+
+- name: wait for DNS pods become ready
+  shell: "kubectl wait -n kube-system --for=condition=Ready pods --selector k8s-app=kube-dns --timeout=600s"
+  register: dns_pods_ready
+
+- debug:
+    var: dns_pods_ready.stdout_lines

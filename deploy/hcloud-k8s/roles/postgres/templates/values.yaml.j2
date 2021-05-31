@@ -1,0 +1,10 @@
+postgresqlUsername: postgres
+postgresqlPassword: {{ postgres.password }}
+postgresqlDatabase: {{ postgres.database }}
+
+persistence:
+    enabled: true
+    size: {{ postgres.volumeSize }}
+
+metrics:
+    enabled: {{ postgres.metrics }}

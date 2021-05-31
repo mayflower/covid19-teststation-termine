@@ -1,0 +1,61 @@
+# replica count
+replicas: 1
+
+# restrict creation of DNS entries to these domains
+domainFilters:
+{% for domain_filter in domain_filters %}
+  - {{ domain_filter }}
+{% endfor %}
+
+# registry to use for ownership (txt or noop)
+registry: "txt"
+
+# logging config
+logLevel: info
+logFormat: text
+
+# DNS provider where records will be created
+provider: hetzner
+
+# Hetzner DNS Console config
+hetzner:
+  token: "{{ hetzner_dns_token }}"
+
+# interval for DNS updates
+interval: 30s
+
+# watch these k8s objects for annotation changes
+sources:
+  - service
+
+serviceTypeFilter:
+  - LoadBalancer
+
+# Sources of endpoints: all namespaces
+namespace: ""
+
+publishHostIP: true
+
+service:
+  annotations:
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "external-dns"
+
+# modify how DNS records are synchronized between sources and providers (options: sync, upsert-only )
+policy: upsert-only
+
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+
+crd:
+  create: false
+
+resources:
+  limits:
+    cpu: 20m
+    memory: 25Mi
+  requests:
+    cpu: 10m
+    memory: 15Mi

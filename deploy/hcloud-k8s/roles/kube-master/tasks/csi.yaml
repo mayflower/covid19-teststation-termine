@@ -1,0 +1,9 @@
+---
+- name: copy HCloud Container Storage Interface (CSI) manifest
+  copy:
+    src: "{{ role_path }}/files/hcloud-csi.yaml"
+    dest: "{{ k8s_install_dir.path }}/hcloud-csi.yaml"
+
+- name: deploy HCloud CSI
+  shell: kubectl apply -f {{ k8s_install_dir.path }}/hcloud-csi.yaml
+  # https://docs.cilium.io/en/v1.9/gettingstarted/k8s-install-default/

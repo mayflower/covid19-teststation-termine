@@ -1,0 +1,46 @@
+---
+- include: prepare.yaml
+  when: state == "present"
+
+- include: destroy-pre.yaml
+  when: state == "absent"
+
+- name: terraforming
+  terraform:
+    project_path: "{{ playbook_dir }}/roles/tf-infrastructure/terraform"
+    force_init: true
+    state: "{{ state }}"
+    variables:
+      hcloud_token: "{{ hetzner_api_token }}"
+      dns_token: "{{ hetzner_dns_token }}"
+      datacenter: "{{ ds_location }}"
+      master_server_type: "{{ master_server_type }}"
+      worker_server_type: "{{ worker_server_type }}"
+      master_count: "{{ master_count }}"
+      worker_count: "{{ worker_count }}"
+      cluster_name: "{{ cluster_name }}"
+      domain: "{{ domain }}"
+      subdomain: "{{ subdomain }}"
+      control_plane_host: "{{ hostname.control_plane }}"
+      traefik_dashboard_host: "{{ hostname.traefik_dashboard }}"
+      application_host: "{{ hostname.application }}"
+      dns_ttl: "{{ dns_ttl }}"
+      network_name: "{{ network_name }}"
+      network_ip_range: "{{ network_ip_range }}"
+      subnet_master_ip_range: "{{ subnet_master_ip_range }}"
+      subnet_master_ip: "{{ subnet_master_ip }}"
+      subnet_worker_ip_range: "{{ subnet_worker_ip_range }}"
+      subnet_worker_ip: "{{ subnet_worker_ip }}"
+      os_image: "{{ os_image }}"
+      outputs_dir: "{{ playbook_dir }}/env"
+      ssh_key: "{{ ssh_authorized_keys | first }}"
+  register: tf
+
+- include: outputs.yaml
+  when: state == "present"
+
+- include: destroy-post.yaml
+  when: state == "absent"
+
+- include: chore.yaml
+  when: state == "absent"

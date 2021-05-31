@@ -1,0 +1,11 @@
+---
+- name: deploy Termine application
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars_files:
+    - "env/config.yaml"
+    - "env/namespace.yaml"
+    - "env/version.yaml"
+  roles:
+    - { role: termine, tags: termine }

@@ -1,0 +1,24 @@
+---
+- name: gather HCloud Volumes (provisioned by Kubernetes pods)
+  hcloud_volume_info:
+    api_token: "{{ hetzner_api_token }}"
+  register: output
+
+- name: destroy HCloud Volumes
+  hcloud_volume:
+    name: "{{ item.name | default(item.instance) }}"
+    api_token: "{{ hetzner_api_token }}"
+    state: absent
+  register: volumes
+  with_items: "{{ output.hcloud_volume_info }}"
+  async: 7200
+  poll: 0
+
+- name: wait for HCloud Volumes deletion to be completed
+  async_status:
+    jid: "{{ item.ansible_job_id }}"
+  register: hetzner_volumes
+  until: hetzner_volumes.finished
+  retries: 300
+  when: volumes.changed
+  with_items: "{{ volumes.results }}"

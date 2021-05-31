@@ -1,0 +1,62 @@
+---
+- name: check if server is reachable
+  ping:
+
+- name: check if server is ready for next installation step
+  stat:
+    path: /opt/ready.txt
+  register: ready
+  until: ready.stat.exists
+  retries: 10
+  delay: 30
+
+- fail:
+    msg: "server is not ready - wait a few minutes and retry again"
+  when: not ready.stat.exists
+
+- name: copy Hetzner Cloud config provider flag for kubeadm
+  copy:
+    src: "{{ role_path }}/files/20-hetzner-cloud.conf"
+    dest: /etc/systemd/system/kubelet.service.d/20-hetzner-cloud.conf
+    mode: u=rw,g=r,o=r
+
+- name: create Docker service directory if it does not exist yet
+  file:
+    path: /etc/systemd/system/docker.service.d
+    state: directory
+
+- name: copy Docker config for systemd
+  copy:
+    src: "{{ role_path }}/files/00-cgroup-systemd.conf"
+    dest: /etc/systemd/system/docker.service.d/00-cgroup-systemd.conf
+    mode: u=rw,g=r,o=r
+
+- name: reload system daemon
+  shell: systemctl daemon-reload
+
+- name: reload docker daemon
+  shell: systemctl restart docker.service
+
+- name: insert or update sysctl settings for IPv4 traffic forwarding
+  blockinfile:
+    path: /etc/sysctl.conf
+    block: |
+      # Allow IP forwarding for Kubernetes
+      net.bridge.bridge-nf-call-iptables = 1
+      net.ipv4.ip_forward = 1
+
+- name: reload sysctl
+  shell: sysctl -p
+
+- name: mount BPF filesystem for Kubernetes cilium network plugin
+  mount:
+    src: bpffs
+    path: /sys/fs/bpf
+    fstype: bpf
+    opts: defaults 0 0
+    state: mounted
+
+- name: mark server as prepared
+  file:
+    path: /opt/prepared.txt
+    state: touch

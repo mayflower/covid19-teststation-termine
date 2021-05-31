@@ -1,0 +1,60 @@
+#
+# PRESETS: DO NOT CHANGE UNLESS YOU KNOW WHY :)
+#
+
+# Kubernetes cluster cert
+kube_dir: ~/.kube
+kube_config: kubernetes-admin-covid-test-station
+
+# Time-to-live for DNS entries
+dns_ttl: 300
+
+# Managed SSL certs
+managed_cert_name: k8s-tls-managed-cert-covidts
+
+# Kubernetes Namespaces
+namespace:
+  prometheusOperator: monitoring
+  postgres: postgres
+  ldap: ldap
+  externalDNS: traefik
+  traefik: traefik
+
+# Helm chart version pinning
+helm_chart_version:
+  prometheusOperator: 15.4.6
+  postgres: 10.3.13
+  externalDNS: 5.0.0
+  traefik: 9.19.1
+
+docker_image_version:
+  hcloudCCM: v1.10.0
+
+# Parameters for Traefik setup
+traefik:
+  dashboard:
+    user: "admin"
+    password: "DKL-3K2-Ld2-Dhg"
+
+# Helm chart values for Prometheus-Operator
+prometheusOperator:
+  deploy: true
+  grafana:
+    user: "admin"
+    password: "DKL-3K2-Ld2-Dhg"
+    persistentConfig: true
+
+# Helm chart values for Postgres database
+postgres:
+  port: 5432
+  volumeSize: 10Gi
+  database: "termine"
+  password: "termine_pw!"
+  metrics: true
+
+# Docker ENV parameters for 389DS LDAP server
+ldap:
+  port: 389
+  tlsPort: 636
+  volumeSize: 10Gi
+  password: "secret"

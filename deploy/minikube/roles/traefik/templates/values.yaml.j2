@@ -1,0 +1,60 @@
+deployment:
+  kind: DaemonSet
+
+ingressRoute:
+  dashboard:
+    enabled: true
+
+globalArguments:
+  - "--global.checknewversion=false"
+  - "--global.sendanonymoususage=false"
+
+additionalArguments:
+  - "--api.insecure=true"
+  - "--accesslog=false"
+  - "--log=true"
+  - "--log.level=INFO"
+  - "--log.format=text"
+  - "--ping"
+  - "--providers.kubernetescrd"
+  - "--metrics.prometheus=true"
+  - "--metrics.prometheus.addEntryPointsLabels=true"
+  - "--metrics.prometheus.addServicesLabels=true"
+  - "--entryPoints.metrics.address=:8082"
+  - "--metrics.prometheus.entryPoint=metrics"
+
+ports:
+  traefik:
+    port: 9000
+    expose: true
+    exposedPort: 9000
+  web:
+    port: 8000
+    expose: true
+    exposedPort: 80
+  websecure:
+    port: 8443
+    expose: false
+    #exposedPort: 443
+  metrics:
+    port: 8082
+    expose: false
+    #exposedPort: 8082
+
+service:
+  enabled: true
+  type: LoadBalancer
+
+resources:
+  limits:
+    cpu: 150m
+    memory: 72Mi
+  requests:
+    cpu: 50m
+    memory: 24Mi
+
+logs:
+  general:
+    level: DEBUG
+  access:
+    enabled: true

@@ -1,0 +1,6 @@
+---
+- name: install Helm chart
+  shell: |-
+    helm --kubeconfig {{ kubeconfig }} repo add bitnami https://charts.bitnami.com/bitnami
+    helm --kubeconfig {{ kubeconfig }} repo update
+    helm --kubeconfig {{ kubeconfig }} install --namespace {{ namespace.externalDNS }} external-dns bitnami/external-dns -f {{ k8s_install_dir.path }}/values.yaml --version {{ helm_chart_version.externalDNS }} --wait

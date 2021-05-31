@@ -1,0 +1,48 @@
+---
+# https://github.com/hetznercloud/hcloud-cloud-controller-manager/blob/master/deploy/ccm-networks.yaml
+- name: copy HCloud Cloud Controller Manager (CCM) manifest
+  template:
+    src: hcloud-ccm.yaml.j2
+    dest: "{{ k8s_install_dir.path }}/hcloud-controller.yaml"
+
+# https://github.com/hetznercloud/hcloud-cloud-controller-manager
+- name: deploy HCloud CCM
+  shell: kubectl apply -f {{ k8s_install_dir.path }}/hcloud-controller.yaml
+
+- name: wait for all control-plane pods become created
+  shell: "kubectl get pod --namespace=kube-system --selector tier=control-plane --output=jsonpath='{.items[*].metadata.name}'"
+  register: control_plane_pods_created
+  until: item in control_plane_pods_created.stdout
+  retries: 20
+  delay: 15
+  with_items:
+    - etcd
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+
+- name: wait for control-plane pods become ready
+  shell: "kubectl wait -n kube-system --for=condition=Ready pods --selector tier=control-plane --timeout=600s"
+  register: control_plane_pods_ready
+
+- debug:
+    var: control_plane_pods_ready.stdout_lines
+
+- name: wait for all kube-proxy pods become created
+  shell: "kubectl get pod -n kube-system --selector k8s-app=kube-proxy --output=jsonpath='{.items[*].metadata.name}'"
+  register: kube_proxy_pods_created
+  until: item in kube_proxy_pods_created.stdout
+  retries: 10
+  delay: 15
+  with_items:
+    - kube-proxy
+
+- name: restart kube-proxy pods to ensure usage of internal node IPs
+  shell: "kubectl delete pod -n kube-system --selector k8s-app=kube-proxy"
+
+- name: wait for kube-proxy pods become ready
+  shell: "kubectl wait -n kube-system --for=condition=Ready pods --selector k8s-app=kube-proxy --timeout=600s"
+  register: kube_proxy_pods_ready
+
+- debug:
+    var: kube_proxy_pods_ready.stdout_lines

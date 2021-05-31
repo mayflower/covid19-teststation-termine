@@ -1,0 +1,20 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: dashboard-basic-auth
+  namespace: {{ namespace.traefik }}
+
+spec:
+  basicAuth:
+    secret: dashboard-basic-auth-secret
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dashboard-basic-auth-secret
+  namespace: {{ namespace.traefik }}
+
+data:
+  users: |
+    {{ htpasswd_data }}

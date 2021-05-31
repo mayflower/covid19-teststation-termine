@@ -1,0 +1,27 @@
+master_ips:
+{% for master in tf.outputs.master_ipv4.value %}
+{% for ip in master %}
+  - {{ ip }}
+{% endfor %}
+{% endfor %}
+
+worker_ips:
+{% for worker in tf.outputs.worker_ipv4.value %}
+{% for ip in worker %}
+  - {{ ip }}
+{% endfor %}
+{% endfor %}
+
+master_ips_private:
+{% for master in tf.outputs.master_ipv4_private.value %}
+{% for ip in master %}
+  - {{ ip }}
+{% endfor %}
+{% endfor %}
+
+worker_ips_private:
+{% for worker in tf.outputs.worker_ipv4_private.value %}
+{% for ip in worker %}
+  - {{ ip }}
+{% endfor %}
+{% endfor %}

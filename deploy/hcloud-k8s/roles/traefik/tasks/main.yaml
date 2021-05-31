@@ -1,0 +1,56 @@
+---
+- name: create working directory
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: build
+  register: k8s_install_dir
+
+- name: encrypt password for Traefik dashboard HTTP basic auth
+  shell: htpasswd -nb {{ traefik.dashboard.user }} {{ traefik.dashboard.password }} | openssl base64
+  register: htpasswd
+
+- name: set htpasswd_data
+  set_fact:
+    htpasswd_data: "{{ htpasswd.stdout }}"
+
+- name: copy k8s manifest for Traefik middleware
+  template:
+    src: middleware.yaml.j2
+    dest: "{{ k8s_install_dir.path }}/middleware.yaml"
+
+- name: create ingress routes
+  template:
+    src: ingress.yaml.j2
+    dest: "{{ k8s_install_dir.path }}/ingress.yaml"
+
+- name: create internal service
+  template:
+    src: service-internal.yaml.j2
+    dest: "{{ k8s_install_dir.path }}/service-internal.yaml"
+
+- name: create Helm chart values
+  template:
+    src: values.yaml.j2
+    dest: "{{ k8s_install_dir.path }}/values.yaml"
+
+- name: Check deployment status of Helm chart
+  shell: "helm --kubeconfig {{ kubeconfig }} status -n {{ namespace.traefik }} traefik 2>/dev/null | grep 'STATUS: deployed' | awk '{print $2}'"
+  ignore_errors: true
+  register: helm_chart_status
+
+- include: install.yaml
+  when: not helm_chart_status.stdout == "deployed"
+
+- include: upgrade.yaml
+  when: helm_chart_status.stdout == "deployed"
+
+- include: monitoring.yaml
+  when: prometheusOperator.deploy
+
+- include: debug.yaml
+
+- name: chore
+  file:
+    path: "{{ k8s_install_dir.path }}"
+    state: absent
+  when: k8s_install_dir.path is defined

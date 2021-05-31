@@ -1,0 +1,76 @@
+deployment:
+  kind: Deployment
+  replicas: 1
+
+ingressRoute:
+  dashboard:
+    enabled: true
+
+globalArguments:
+  - "--global.checknewversion=false"
+  - "--global.sendanonymoususage=false"
+
+additionalArguments:
+  - "--api.insecure=true"
+  - "--accesslog=true"
+  - "--log=true"
+  - "--log.level=INFO"
+  - "--log.format=text"
+  - "--ping"
+  - "--providers.kubernetescrd"
+  - "--entrypoints.web.forwardedheaders.insecure=true"
+  - "--metrics.prometheus=true"
+  - "--metrics.prometheus.addEntryPointsLabels=true"
+  - "--metrics.prometheus.addServicesLabels=true"
+  - "--entryPoints.metrics.address=:8082"
+  - "--metrics.prometheus.entryPoint=metrics"
+
+ports:
+  web:
+    port: 8080
+    expose: false
+  websecure:
+    port: 8443
+    expose: true
+    exposedPort: 443
+  traefik:
+    port: 9000
+    expose: false
+  metrics:
+    port: 8082
+    expose: false
+
+service:
+  enabled: true
+  type: LoadBalancer
+  annotations:
+    # Configure Hetzner Cloud LB
+    load-balancer.hetzner.cloud/location: "{{ ds_location }}"
+    load-balancer.hetzner.cloud/use-private-ip: "true"
+    load-balancer.hetzner.cloud/name: "traefik-lb"
+    load-balancer.hetzner.cloud/type: "lb11"
+    load-balancer.hetzner.cloud/ipv6-disabled: "true"
+    load-balancer.hetzner.cloud/disable-private-ingress: "true"
+    # Configure managed Let's Encrypt SSL cert
+    load-balancer.hetzner.cloud/protocol: "https"
+    load-balancer.hetzner.cloud/http-redirect-http: "true"
+    load-balancer.hetzner.cloud/certificate-type: "managed"
+    load-balancer.hetzner.cloud/http-managed-certificate-name: "{{ managed_cert_name }}"
+    load-balancer.hetzner.cloud/http-managed-certificate-domains: "{{ hostnames | join(',') }}"
+    # Provision DNS entries
+    external-dns.alpha.kubernetes.io/ttl: "{{ dns_ttl }}"
+    external-dns.alpha.kubernetes.io/hostname: "{{ hostnames | join(',') }}"
+
+autoscaling:
+  enabled: false
+
+persistence:
+  enabled: false
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 150Mi
+  requests:
+    cpu: 100m
+    memory: 50Mi

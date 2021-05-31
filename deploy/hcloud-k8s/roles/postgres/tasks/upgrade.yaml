@@ -1,0 +1,5 @@
+---
+- name: upgrade Helm chart
+  shell: |-
+    helm --kubeconfig {{ kubeconfig }} repo update
+    helm --kubeconfig {{ kubeconfig }} upgrade -n {{ namespace.postgres }} postgresql bitnami/postgresql -f {{ k8s_install_dir.path }}/values.yaml --version {{ helm_chart_version.postgres }} --wait

@@ -1,0 +1,48 @@
+---
+- name: copy Kubernetes init config
+  template: src=init.yaml.j2 dest="/root/init.yaml"
+  vars:
+    ansible_become: yes
+
+- name: load Kubernetes images
+  shell: kubeadm config images pull --kubernetes-version={{ kubernetes_version }}
+  register: kubeadm
+
+- name: init Kubernetes master node
+  shell: kubeadm init --config /root/init.yaml --ignore-preflight-errors=NumCPU
+  become: yes
+  register: kubeadm
+
+- name: output from kubeadm init
+  debug:
+    var: kubeadm.stdout_lines
+
+- name: create folder for kubeconfig on server
+  file:
+    path: /root/.kube
+    state: directory
+    mode: u=rwx,g=rx,o-rwx
+
+- name: copy kubeconfig auth file on server
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    mode: u=rw,g=r,o-rwx
+    remote_src: yes
+
+- name: create folder for kubeconfig on server
+  file:
+    path: /home/k8s/.kube
+    state: directory
+    group: k8s
+    owner: k8s
+    mode: u=rwx,g=rx,o-rwx
+
+- name: copy kubeconfig auth file on server
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/k8s/.kube/config
+    group: k8s
+    owner: k8s
+    mode: u=rw,g=r,o-rwx
+    remote_src: yes

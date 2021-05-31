@@ -1,0 +1,12 @@
+---
+- name: deploy Termine application
+  hosts: localhost
+  gather_facts: false
+  become: false
+  vars_files:
+    - "env/setup.yaml"
+    - "env/app.yaml"
+  vars:
+    kubeconfig: "{{ kube_dir }}/{{ kube_config }}"
+  roles:
+    - { role: termine, tags: termine }

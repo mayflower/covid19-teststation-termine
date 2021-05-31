@@ -1,0 +1,41 @@
+---
+- name: create working directory
+  tempfile:
+    state: directory
+    suffix: build
+    prefix: ansible.{{ cluster_name }}
+  register: k8s_install_dir
+
+- name: check if server is already installed
+  stat:
+    path: /opt/master.txt
+  register: master
+
+- include: init.yaml
+  when: not master.stat.exists
+
+- name: create HCloud secret object
+  shell: kubectl -n kube-system create secret generic hcloud --from-literal=network="{{ network_name }}" --from-literal=token="{{ hetzner_api_token }}"
+  when: not master.stat.exists
+
+- include: ccm.yaml
+  when: not master.stat.exists
+
+- include: cni.yaml
+  when: not master.stat.exists
+
+- include: csi.yaml
+  when: not master.stat.exists
+
+- name: mark server as installed
+  file:
+    path: /opt/master.txt
+    state: touch
+
+- include: join.yaml
+
+- name: chore
+  file:
+    path: "{{ k8s_install_dir.path }}"
+    state: absent
+  when: k8s_install_dir.path is defined

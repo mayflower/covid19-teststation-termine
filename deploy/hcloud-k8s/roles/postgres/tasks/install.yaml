@@ -1,0 +1,25 @@
+---
+- name: install Helm chart
+  shell: |-
+    helm --kubeconfig {{ kubeconfig }} repo add bitnami https://charts.bitnami.com/bitnami
+    helm --kubeconfig {{ kubeconfig }} repo update
+    helm --kubeconfig {{ kubeconfig }} install -n {{ namespace.postgres }} postgresql bitnami/postgresql -f {{ k8s_install_dir.path }}/values.yaml --version {{ helm_chart_version.postgres }} --wait
+
+- name: wait for pods become created
+  shell: "kubectl get pod -n {{ namespace.postgres }} --selector 'app.kubernetes.io/instance=postgresql' --output=jsonpath='{.items[*].metadata.name}'"
+  register: pods_created
+  until: item in pods_created.stdout
+  retries: 10
+  delay: 15
+  with_items:
+    - postgresql-postgresql-0
+
+- debug:
+    var: pods_created
+
+- name: wait for pods become ready
+  shell: "kubectl wait -n {{ namespace.postgres }} --for=condition=Ready pods --selector 'app.kubernetes.io/instance=postgresql' --timeout=600s"
+  register: pods_ready
+
+- debug:
+    var: pods_ready

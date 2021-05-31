@@ -1,0 +1,8 @@
+---
+- name: join Kubernetes control plane
+  shell: "{{lookup('file', '/tmp/' + cluster_name + '.worker-join.sh')}}"
+
+- name: mark worker node as joined
+  file:
+    path: /opt/worker-joined.txt
+    state: touch
