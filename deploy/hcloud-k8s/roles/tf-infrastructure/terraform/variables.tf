@@ -132,3 +132,8 @@ variable "dns_ttl" {
   description = "Time to live for a freshly created DNS record"
   default = "300"
 }
+
+variable "ssh_key" {
+  type = string
+  description = "Your SSH key for server access"
+}

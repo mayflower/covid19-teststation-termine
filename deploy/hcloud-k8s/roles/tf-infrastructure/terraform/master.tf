@@ -23,13 +23,19 @@ resource "hcloud_server" "master-node" {
   user_data = file("./user-data/cloud-config.master.yaml")
 
   # SSH key IDs or names which should be injected into the server at creation time
-  ssh_keys = data.hcloud_ssh_keys.superusers.ssh_keys.*.id
+  ssh_keys = [ hcloud_ssh_key.default.id ]
 
   labels = {
     "node-role" = "master",
     "cluster-name" = var.cluster_name,
     "builder" = "terraform",
   }
+
+  depends_on = [
+    hcloud_network.k8s-cluster-network,
+    hcloud_network_subnet.k8s-master-nodes-subnet,
+    hcloud_ssh_key.default,
+  ]
 }
 
 # Provides a Hetzner Cloud Server Network to represent a private network on a server in the Hetzner Cloud:

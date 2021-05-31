@@ -33,6 +33,7 @@
       subnet_worker_ip: "{{ subnet_worker_ip }}"
       os_image: "{{ os_image }}"
       outputs_dir: "{{ playbook_dir }}/env"
+      ssh_key: "{{ ssh_authorized_keys | first }}"
   register: tf
 
 - include: outputs.yaml

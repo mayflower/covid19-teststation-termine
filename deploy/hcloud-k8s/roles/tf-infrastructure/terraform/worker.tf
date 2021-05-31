@@ -23,11 +23,12 @@ resource "hcloud_server" "worker-node" {
   user_data = file("./user-data/cloud-config.worker.yaml")
 
   # SSH key IDs or names which should be injected into the server at creation time
-  ssh_keys = data.hcloud_ssh_keys.superusers.ssh_keys.*.id
+  ssh_keys = [ hcloud_ssh_key.default.id ]
 
   depends_on = [
     hcloud_network.k8s-cluster-network,
     hcloud_network_subnet.k8s-worker-nodes-subnet,
+    hcloud_ssh_key.default,
   ]
 
   labels = {
