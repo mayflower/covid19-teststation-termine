@@ -9,14 +9,17 @@
   shell: "kubectl get pod -n {{ namespace.postgres }} --selector 'app.kubernetes.io/instance=postgresql' --output=jsonpath='{.items[*].metadata.name}'"
   register: pods_created
   until: item in pods_created.stdout
-  retries: 20
+  retries: 10
   delay: 15
   with_items:
     - postgresql-postgresql-0
+
+- debug:
+    var: pods_created
 
 - name: wait for pods become ready
   shell: "kubectl wait -n {{ namespace.postgres }} --for=condition=Ready pods --selector 'app.kubernetes.io/instance=postgresql' --timeout=600s"
   register: pods_ready
 
 - debug:
-    var: pods_ready.stdout_lines
+    var: pods_ready
